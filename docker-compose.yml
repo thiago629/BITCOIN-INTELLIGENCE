@@ -1,0 +1,40 @@
+# Local / staging stack. Not a production deployment.
+# Requires POSTGRES_PASSWORD in a .env file next to this file (see .env.example).
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: bitcoin_intelligence
+      POSTGRES_USER: bi
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bi -d bitcoin_intelligence"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      BI_ENVIRONMENT: ${BI_ENVIRONMENT:-development}
+      BI_DATABASE_URL: postgresql+asyncpg://bi:${POSTGRES_PASSWORD}@db:5432/bitcoin_intelligence
+      BI_CORS_ORIGINS: '["http://localhost:8080"]'
+      BI_INGESTION_ENABLED: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
