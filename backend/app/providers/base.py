@@ -12,6 +12,7 @@ from app.domain.models import (
     AddressInfo,
     AddressTx,
     Block,
+    BlockTxSummary,
     DifficultyAdjustment,
     FeeEstimates,
     MempoolRecentTx,
@@ -30,6 +31,7 @@ class Capability(StrEnum):
     MEMPOOL_RECENT = "mempool_recent"
     FEES = "fees"
     DIFFICULTY = "difficulty"
+    BLOCK_SUMMARY = "block_summary"  # every tx of a block (txid/value/fee) in one call
 
 
 class BlockchainProvider(ABC):
@@ -77,3 +79,7 @@ class BlockchainProvider(ABC):
 
     async def get_difficulty_adjustment(self) -> DifficultyAdjustment:
         raise CapabilityNotSupported(self.key, "difficulty adjustment not supported")
+
+    async def get_block_summary(self, block_hash: str) -> list[BlockTxSummary]:
+        """All non-coinbase transactions of a block with their output value."""
+        raise CapabilityNotSupported(self.key, "block summary not supported")

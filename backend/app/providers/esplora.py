@@ -22,7 +22,7 @@ from app.domain.models import (
     TxStatus,
 )
 from app.providers.base import BlockchainProvider, Capability
-from app.providers.errors import ProviderUnavailable
+from app.providers.errors import ProviderBadResponse
 from app.providers.http import ProviderHttpClient
 
 
@@ -53,7 +53,7 @@ class EsploraProvider(BlockchainProvider):
         try:
             return fn(payload)
         except (KeyError, TypeError, ValueError) as exc:
-            raise ProviderUnavailable(
+            raise ProviderBadResponse(
                 self.key, f"unexpected response format ({type(exc).__name__}: {exc})"
             ) from exc
 

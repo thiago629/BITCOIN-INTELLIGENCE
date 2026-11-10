@@ -6,6 +6,8 @@ import { PageHeader } from "./components/ui";
 import { Dashboard } from "./pages/Dashboard";
 import { AddressPage, BlockPage, ExplorerHome, TxPage } from "./pages/Explorer";
 import { SystemPage } from "./pages/System";
+import { WhaleDetailPage, WhaleTrackerPage } from "./pages/Whales";
+import { AlertsPage } from "./pages/Alerts";
 
 export function makeQueryClient() {
   return new QueryClient({
@@ -37,6 +39,9 @@ export function AppRoutes() {
         <Route path="block/:hash" element={<BlockPage />} />
         <Route path="tx/:txid" element={<TxPage />} />
         <Route path="address/:address" element={<AddressPage />} />
+        <Route path="whales" element={<WhaleTrackerPage />} />
+        <Route path="whales/:txid" element={<WhaleDetailPage />} />
+        <Route path="alerts" element={<AlertsPage />} />
         <Route path="system" element={<SystemPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>

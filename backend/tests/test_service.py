@@ -108,3 +108,20 @@ async def test_unconfirmed_tx_uses_short_ttl(upstream: FakeUpstream, settings: S
     await svc.get_transaction(TXID)
     await svc.get_transaction(TXID)
     assert upstream.count(MEMPOOL, f"/api/tx/{TXID}") == 3
+
+
+async def test_bad_response_does_not_cool_down_provider(
+    upstream: FakeUpstream, settings: Settings
+) -> None:
+    # A malformed payload on one endpoint must not take the provider offline
+    # for every other operation.
+    upstream.json(MEMPOOL, f"/api/tx/{TXID}", {"broken": True})
+    upstream.json(BLOCKSTREAM, f"/api/tx/{TXID}", tx_payload())
+    upstream.text(MEMPOOL, "/api/blocks/tip/height", "5")
+    svc = service(upstream, settings, failure_threshold=1, ttl=TTLPolicy(tx_confirmed=0))
+    for _ in range(3):
+        res = await svc.get_transaction(TXID)
+        assert res.meta.source == "blockstream.info" and res.meta.fallback_used
+    status = svc.provider_status()[0]
+    assert not status["in_cooldown"] and status["total_failures"] == 3
+    assert (await svc.get_tip_height()).meta.source == "mempool.space"

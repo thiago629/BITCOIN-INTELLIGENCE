@@ -5,15 +5,22 @@ extras, recommended fees, difficulty adjustment). Reference:
 https://mempool.space/docs/api/rest
 """
 
+import math
 from typing import Any
 
-from app.domain.models import Block, DifficultyAdjustment, FeeEstimates, FeeMethod
+from app.domain.models import (
+    Block,
+    BlockTxSummary,
+    DifficultyAdjustment,
+    FeeEstimates,
+    FeeMethod,
+)
 from app.providers.base import Capability
 from app.providers.esplora import EsploraProvider, ts
 
 
 class MempoolSpaceProvider(EsploraProvider):
-    capabilities = EsploraProvider.capabilities | {Capability.DIFFICULTY}
+    capabilities = EsploraProvider.capabilities | {Capability.DIFFICULTY, Capability.BLOCK_SUMMARY}
 
     @classmethod
     def parse_block_with_extras(cls, raw: dict[str, Any]) -> Block:
@@ -62,3 +69,22 @@ class MempoolSpaceProvider(EsploraProvider):
             ),
             raw,
         )
+
+    async def get_block_summary(self, block_hash: str) -> list[BlockTxSummary]:
+        raw = await self.http.get_json(f"/v1/block/{block_hash}/summary")
+
+        def parse(r: list[dict[str, Any]]) -> list[BlockTxSummary]:
+            # The first transaction of every block is the coinbase (newly minted
+            # reward); it is not a movement between addresses, so it is skipped.
+            return [
+                BlockTxSummary(
+                    txid=t["txid"],
+                    value_sat=t["value"],
+                    fee_sat=t["fee"],
+                    # mempool.space reports vsize as weight/4, which can be fractional.
+                    vsize=math.ceil(t["vsize"]),
+                )
+                for t in r[1:]
+            ]
+
+        return self._guard(parse, raw)

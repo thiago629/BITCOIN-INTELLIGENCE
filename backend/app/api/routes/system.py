@@ -41,6 +41,15 @@ class IngestionStatus(BaseModel):
     stored_blocks: int
 
 
+class WhaleTrackerStatus(BaseModel):
+    enabled: bool
+    running: bool
+    interval_s: float | None
+    last_run_at: datetime | None
+    last_status: str | None
+    last_errors: list[str]
+
+
 class HealthResponse(BaseModel):
     status: str
     version: str
@@ -50,6 +59,7 @@ class HealthResponse(BaseModel):
     cache: dict[str, int]
     providers: list[ProviderStatus]
     ingestion: IngestionStatus
+    whale_tracker: WhaleTrackerStatus
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -59,6 +69,7 @@ async def health(
     db: Annotated[Database, Depends(get_db)],
     worker: Annotated[IngestionWorker | None, Depends(get_worker)],
 ) -> Any:
+    ww = getattr(request.app.state, "whale_worker", None)
     db_ok = await db.ping()
     stored = 0
     if db_ok:
@@ -86,6 +97,14 @@ async def health(
             last_run_at=worker.last_run_at if worker else None,
             last_status=worker.last_result.status if worker and worker.last_result else None,
             stored_blocks=stored,
+        ),
+        whale_tracker=WhaleTrackerStatus(
+            enabled=ww is not None,
+            running=bool(ww and ww.running),
+            interval_s=ww.interval_s if ww else None,
+            last_run_at=ww.last_run_at if ww else None,
+            last_status=ww.last_result.status if ww and ww.last_result else None,
+            last_errors=ww.last_result.errors[:5] if ww and ww.last_result else [],
         ),
     )
 

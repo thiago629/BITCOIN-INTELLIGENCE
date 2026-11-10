@@ -158,3 +158,20 @@ async def test_http_timeout_is_unavailable(upstream: FakeUpstream) -> None:
     upstream.handler(BLOCKSTREAM, "/api/x", boom)
     with pytest.raises(ProviderUnavailable, match="timeout"):
         await make(upstream).get_json("/x")
+
+
+async def test_block_summary_skips_coinbase_and_rounds_fractional_vsize(
+    upstream: FakeUpstream,
+) -> None:
+    upstream.json(
+        MEMPOOL,
+        "/api/v1/block/abc/summary",
+        [
+            {"txid": "c" * 64, "fee": 0, "vsize": 200, "value": 315_000_000},
+            {"txid": "d" * 64, "fee": 500, "vsize": 140.25, "value": 10_000},
+        ],
+    )
+    p = MempoolSpaceProvider(make(upstream, MEMPOOL), "mempool", "m")
+    txs = await p.get_block_summary("abc")
+    assert [t.txid for t in txs] == ["d" * 64]
+    assert txs[0].vsize == 141

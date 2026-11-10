@@ -7,6 +7,7 @@ from typing import Any
 import httpx
 
 from app.providers.errors import (
+    ProviderBadResponse,
     ProviderError,
     ProviderNotFound,
     ProviderRateLimited,
@@ -36,7 +37,7 @@ class ProviderHttpClient:
         try:
             return resp.json()
         except ValueError as exc:
-            raise ProviderUnavailable(self._provider, f"invalid JSON from {path}") from exc
+            raise ProviderBadResponse(self._provider, f"invalid JSON from {path}") from exc
 
     async def get_text(self, path: str) -> str:
         resp = await self._get(path)

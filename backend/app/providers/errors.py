@@ -32,6 +32,14 @@ class ProviderUnavailable(ProviderError):
     """Timeouts, connection failures, 5xx answers or malformed payloads."""
 
 
+class ProviderBadResponse(ProviderUnavailable):
+    """The provider answered, but the payload did not match the expected format.
+
+    Usually endpoint-specific (an API change or an unexpected value), so it is
+    recorded but does not put the whole provider into cooldown.
+    """
+
+
 class CapabilityNotSupported(ProviderError):
     """The provider does not implement the requested operation."""
 

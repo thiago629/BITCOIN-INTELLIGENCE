@@ -4,7 +4,7 @@ Plataforma de inteligencia blockchain especializada en Bitcoin. Analiza datos **
 
 > No custodia Bitcoin, no gestiona claves privadas, no ejecuta transacciones y no atribuye identidades a direcciones sin pruebas verificables.
 
-## Estado actual — Fase 1 (Fundación) ✅
+## Estado actual — Fases 1 y 2 ✅
 
 | Área | Estado |
 |---|---|
@@ -15,9 +15,11 @@ Plataforma de inteligencia blockchain especializada en Bitcoin. Analiza datos **
 | Ingesta periódica con relleno de huecos y gestión de reorganizaciones | Funcional |
 | API REST `/api/v1` con validación de entradas y límite de peticiones | Funcional |
 | Frontend: Dashboard, Blockchain Explorer (bloques, transacciones, direcciones, búsqueda), Estado del sistema | Funcional |
-| Pruebas automatizadas | 37 backend + 11 frontend |
+| **Whale Tracker**: grandes movimientos en bloques y mempool, niveles, filtros, historial, análisis observado / interpretación / desconocido | Funcional, datos reales |
+| **Alerts**: reglas configurables e historial de alertas disparadas | Funcional |
+| Pruebas automatizadas | 57 backend + 16 frontend |
 
-Los módulos de fases posteriores (Whale Tracker, Anomaly Detection, AI Reports…) aparecen en el menú **desactivados con su fase**, nunca como páginas vacías. Ver [docs/ROADMAP.md](docs/ROADMAP.md).
+Los módulos de fases posteriores (Data Intelligence, Anomaly Detection, AI Reports…) aparecen en el menú **desactivados con su fase**, nunca como páginas vacías. Ver [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Arranque rápido (desarrollo)
 

@@ -18,6 +18,7 @@ from app.domain.models import (
     AddressInfo,
     AddressTx,
     Block,
+    BlockTxSummary,
     DifficultyAdjustment,
     FeeEstimates,
     MempoolRecentTx,
@@ -28,6 +29,7 @@ from app.providers.base import BlockchainProvider, Capability
 from app.providers.errors import (
     AllProvidersFailed,
     CapabilityNotSupported,
+    ProviderBadResponse,
     ProviderError,
     ProviderNotFound,
     ProviderRateLimited,
@@ -78,6 +80,7 @@ class TTLPolicy:
     mempool_recent: float = 10
     fees: float = 15
     difficulty: float = 60
+    block_summary: float = 600
     extra: dict[str, float] = field(default_factory=dict)
 
 
@@ -214,14 +217,20 @@ class BlockchainService:
 
     def _record_failure(self, provider: BlockchainProvider, exc: ProviderError) -> None:
         h = self.health[provider.key]
-        h.consecutive_failures += 1
         h.total_failures += 1
         h.last_error = exc.message
         h.last_failure_at = datetime.now(UTC)
-        if isinstance(exc, ProviderRateLimited):
+        if isinstance(exc, ProviderBadResponse):
+            # Endpoint-specific format problem: recorded, but it does not count
+            # towards cooldown, so every other operation keeps using this provider.
+            pass
+        elif isinstance(exc, ProviderRateLimited):
+            h.consecutive_failures += 1
             h.cooldown_until = time.monotonic() + (exc.retry_after_s or self.cooldown_s)
-        elif h.consecutive_failures >= self.failure_threshold:
-            h.cooldown_until = time.monotonic() + self.cooldown_s
+        else:
+            h.consecutive_failures += 1
+            if h.consecutive_failures >= self.failure_threshold:
+                h.cooldown_until = time.monotonic() + self.cooldown_s
         logger.warning(
             "provider_failure",
             extra={
@@ -323,6 +332,14 @@ class BlockchainService:
             Capability.DIFFICULTY,
             self.ttl.difficulty,
             lambda p: p.get_difficulty_adjustment(),
+        )
+
+    async def get_block_summary(self, block_hash: str) -> Result[list[BlockTxSummary]]:
+        return await self._fetch(
+            f"block_summary:{block_hash}",
+            Capability.BLOCK_SUMMARY,
+            self.ttl.block_summary,
+            lambda p: p.get_block_summary(block_hash),
         )
 
     # --------------------------------------------------------------- health

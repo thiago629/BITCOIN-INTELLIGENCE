@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.2.0 — 2026-11-10 — Fase 2: Whale Tracker y Alerts
+
+### Añadido
+- **Whale Tracker**: detección de transacciones con salidas totales ≥ umbral configurable (`BI_WHALE_MIN_BTC`, 100 BTC por defecto) con una sola petición por bloque (`/v1/block/{hash}/summary` de mempool.space) y muestreo del mempool.
+- Clasificación por niveles configurables (`BI_WHALE_TIERS_BTC`): Grande ≥100, Muy grande ≥1.000, Ballena ≥10.000 BTC.
+- Análisis por capas de cada movimiento: **observado** (hechos), **interpretación** (heurísticas con método y confianza) y **desconocido**. Sin atribución de identidades.
+- Enriquecimiento automático (estructura de entradas/salidas, importe que vuelve a direcciones de origen) y bajo demanda en la vista de detalle.
+- Historial con filtros por fecha, importe, estado y orden; estadísticas de 24 h por hora y por nivel con **ventana de cobertura** explícita (las horas aún no analizadas se muestran como desconocidas, no como cero).
+- **Alerts**: reglas configurables (umbral, incluir o no sin confirmar, activar/pausar, eliminar conservando el historial), evaluadas al detectar o confirmar un movimiento; historial de alertas disparadas.
+- Protección de escritura: `BI_ADMIN_API_KEY` (cabecera `X-API-Key`); sin clave, la escritura solo se permite en `development`.
+- Dashboard: panel de grandes movimientos recientes.
+
+### Corregido
+- mempool.space devuelve `vsize` fraccionario en el resumen de bloque; se redondea hacia arriba.
+- Un error de formato en un endpoint ya no pone en pausa al proveedor completo (`ProviderBadResponse`): se registra y se usa el respaldo solo para esa operación.
+- Importes en los textos de análisis con formato español, igual que la interfaz.
+
 ## 0.1.0 — 2026-11-10 — Fase 1: Fundación
 
 ### Añadido

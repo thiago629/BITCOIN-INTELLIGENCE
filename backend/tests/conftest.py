@@ -197,6 +197,7 @@ def settings(tmp_path: Any) -> Settings:
         mempool_base_url=f"https://{MEMPOOL}/api",
         blockstream_base_url=f"https://{BLOCKSTREAM}/api",
         ingestion_enabled=False,
+        whale_tracking_enabled=False,
         http_max_retries=1,
         rate_limit_per_minute=0,
         log_level="WARNING",

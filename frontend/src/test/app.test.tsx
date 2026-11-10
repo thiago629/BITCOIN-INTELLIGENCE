@@ -82,7 +82,8 @@ describe("Navigation", () => {
   it("shows future modules disabled with their phase, never as empty pages", async () => {
     stubFetch({ "/api/v1/health": { status: 200, body: health } });
     renderAt("/system");
-    expect(screen.getByText("Whale Tracker").closest(".nav-item")).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Anomaly Detection").closest(".nav-item")).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Whale Tracker").closest("a")).toHaveAttribute("href", "/whales");
     expect(screen.getByText("Fase 4")).toBeInTheDocument();
   });
 });

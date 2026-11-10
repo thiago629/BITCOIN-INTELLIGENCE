@@ -10,11 +10,17 @@ Arquitectura modular, motor de datos con proveedores intercambiables, caché, fa
 - Rate limit y caché compartidos (Redis) si se despliegan varias réplicas del backend.
 - Política de retención del historial (`network_snapshots` crece ~1.440 filas/día).
 
-## Fase 2 — Inteligencia blockchain
+## Fase 2 — Inteligencia blockchain (en curso, v0.2.0)
 
-- **Whale Tracker**: ingesta de transacciones de cada bloque nuevo (y de `mempool/recent`) → tabla de movimientos que superan umbrales configurables; filtros por fecha/importe; historial; distinción explícita *observado / interpretación / desconocido* (p. ej. "salida de cambio probable" es interpretación, nunca hecho).
-- **Alerts**: reglas configurables (umbral BTC, tasa de comisión, tamaño de mempool) evaluadas por el worker; historial de alertas disparadas.
-- **Data Intelligence**: métricas agregadas por periodo (tx/día, comisiones/día, tamaño de bloques) sobre el historial almacenado.
+- ✅ **Whale Tracker**: detección por bloque completo (1 petición/bloque) + muestra del mempool, niveles configurables, filtros, historial, estadísticas con ventana de cobertura, análisis observado / interpretación / desconocido.
+- ✅ **Alerts**: reglas configurables, evaluación automática, historial.
+- ⏳ **Data Intelligence**: métricas agregadas por periodo (tx/día, comisiones/día, tamaño de bloques) sobre el historial almacenado.
+
+**Pendiente de la Fase 2:**
+- Notificaciones de alertas fuera de la aplicación (email/webhook). Requiere elegir proveedor; no se ha contratado nada.
+- Transacciones sin confirmar que nunca se confirman: hoy quedan como "Mempool" o "No localizada"; falta una política de caducidad.
+- El muestreo del mempool es limitado (últimas 10 tx por ciclo). La cobertura total del mempool requiere un nodo propio o el WebSocket de mempool.space.
+- Si se baja `BI_WHALE_MIN_BTC`, los bloques ya analizados no se reprocesan.
 
 ## Fase 3 — Análisis avanzado
 

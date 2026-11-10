@@ -1,5 +1,7 @@
 import { useMemo } from "react";
-import { useBlockHistory, useNetworkHistory, useNetworkSummary, useRecentBlocks } from "../api/hooks";
+import { Link } from "react-router-dom";
+import { useBlockHistory, useNetworkHistory, useNetworkSummary, useRecentBlocks, useWhales } from "../api/hooks";
+import { WhaleTable } from "./Whales";
 import { SeriesChart } from "../components/Charts";
 import { BlocksTable } from "../components/BlocksTable";
 import { Empty, ErrorState, Freshness, Loading, PageHeader, Panel, Stat, StoredFreshness } from "../components/ui";
@@ -187,11 +189,30 @@ function LatestBlocks() {
   );
 }
 
+function RecentWhales() {
+  const { data, isLoading, error, refetch } = useWhales({ limit: 6 });
+  return (
+    <Panel
+      title="Grandes movimientos recientes"
+      subtitle={data ? `Transacciones ≥ ${formatInt(data.tracking.min_btc)} BTC (suma de salidas)` : undefined}
+      meta={data && <StoredFreshness generatedAt={data.generated_at} records={data.total} />}
+      actions={<Link className="link small" to="/whales">Ver Whale Tracker →</Link>}
+    >
+      {isLoading ? <Loading /> : error || !data ? <ErrorState error={error} onRetry={() => refetch()} /> : data.data.length === 0 ? (
+        <Empty>{data.tracking.blocks_scanned === 0 ? "El análisis de bloques aún no ha empezado." : "Sin movimientos registrados."}</Empty>
+      ) : (
+        <WhaleTable whales={data.data} compact />
+      )}
+    </Panel>
+  );
+}
+
 export function Dashboard() {
   return (
     <>
       <PageHeader title="Dashboard">Visión general de la red Bitcoin con datos públicos. Cada panel indica su fuente y cuándo se actualizó.</PageHeader>
       <NetworkOverview />
+      <RecentWhales />
       <div className="grid grid-2">
         <LatestBlocks />
         <MempoolDistribution />

@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.routes import explorer, history, network, system
+from app.api.routes import alerts, explorer, history, network, system, whales
 from app.core.config import APP_VERSION, Settings, get_settings
 from app.core.logging import configure_logging
 from app.core.middleware import RateLimitMiddleware, RequestContextMiddleware
@@ -23,6 +23,7 @@ from app.providers.errors import (
 )
 from app.providers.registry import build_providers
 from app.services.blockchain import BlockchainService
+from app.whales.worker import WhaleWorker
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +72,21 @@ def create_app(
             )
             worker.start()
         app.state.worker = worker
+        whale_worker: WhaleWorker | None = None
+        if settings.whale_tracking_enabled:
+            whale_worker = WhaleWorker(
+                service,
+                db,
+                min_btc=settings.whale_min_btc,
+                interval_s=settings.whale_interval_s,
+                max_blocks_per_cycle=settings.whale_max_blocks_per_cycle,
+                enrich_per_cycle=settings.whale_enrich_per_cycle,
+                lookback_blocks=settings.ingestion_backfill_blocks,
+            )
+            whale_worker.start()
+        app.state.whale_worker = whale_worker
+        if settings.environment != "development" and not settings.admin_api_key:
+            logger.warning("write_api_disabled", extra={"reason": "BI_ADMIN_API_KEY not set"})
         logger.info(
             "startup",
             extra={
@@ -83,6 +99,8 @@ def create_app(
         try:
             yield
         finally:
+            if whale_worker:
+                await whale_worker.stop()
             if worker:
                 await worker.stop()
             await client.aclose()
@@ -102,8 +120,8 @@ def create_app(
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
-        allow_methods=["GET"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PATCH", "DELETE"],
+        allow_headers=["Content-Type", "X-API-Key", "X-Request-ID"],
     )
     app.add_middleware(RequestContextMiddleware)
 
@@ -134,6 +152,8 @@ def create_app(
     app.include_router(network.router, prefix=prefix)
     app.include_router(explorer.router, prefix=prefix)
     app.include_router(history.router, prefix=prefix)
+    app.include_router(whales.router, prefix=prefix)
+    app.include_router(alerts.router, prefix=prefix)
     return app
 
 

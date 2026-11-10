@@ -130,6 +130,13 @@ class DifficultyAdjustment(BaseModel):
     previous_retarget_percent: float | None = None
 
 
+class BlockTxSummary(BaseModel):
+    txid: str
+    value_sat: int = Field(description="Sum of all outputs (includes change)")
+    fee_sat: int
+    vsize: int
+
+
 class MempoolRecentTx(BaseModel):
     txid: str
     fee_sat: int

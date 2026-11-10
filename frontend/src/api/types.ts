@@ -218,3 +218,122 @@ export interface SearchResult {
   type: "block" | "transaction" | "address";
   id: string;
 }
+
+// ---- Whale Tracker -------------------------------------------------------
+
+export interface Tier {
+  level: number;
+  min_btc: number;
+  label: string;
+}
+
+export interface Whale {
+  txid: string;
+  value_sat: number;
+  fee_sat: number | null;
+  vsize: number | null;
+  confirmed: boolean;
+  block_height: number | null;
+  block_hash: string | null;
+  block_time: string | null;
+  first_seen_at: string;
+  event_time: string;
+  detected_via: "block" | "mempool";
+  source: string;
+  tier: Tier | null;
+  enriched: boolean;
+  upstream_missing: boolean;
+  input_count: number | null;
+  output_count: number | null;
+  returned_to_input_sat: number | null;
+}
+
+export interface Tracking {
+  enabled: boolean;
+  min_btc: number;
+  tiers: Tier[];
+  blocks_scanned: number;
+  lowest_height: number | null;
+  highest_height: number | null;
+  last_scan_at: string | null;
+  /** Block time of the oldest analysed block: earlier periods are not covered. */
+  coverage_since: string | null;
+  notes: string[];
+}
+
+export interface WhaleList {
+  data: Whale[];
+  total: number;
+  limit: number;
+  offset: number;
+  generated_at: string;
+  source: string;
+  tracking: Tracking;
+}
+
+export interface WhaleStats {
+  hours: number;
+  count: number;
+  confirmed_count: number;
+  unconfirmed_count: number;
+  volume_sat: number;
+  largest: Whale | null;
+  /** count/volume are null for hours not covered by analysed blocks (unknown, not zero). */
+  by_hour: { hour: string; count: number | null; volume_sat: number | null }[];
+  by_tier: { tier: Tier; count: number; volume_sat: number }[];
+  generated_at: string;
+  source: string;
+  tracking: Tracking;
+}
+
+export interface Finding {
+  label: string;
+  detail: string;
+  method: string | null;
+  confidence: "baja" | "media" | "alta" | null;
+}
+
+export interface WhaleDetail {
+  whale: Whale;
+  analysis: { observed: Finding[]; interpretations: Finding[]; unknowns: Finding[] };
+  generated_at: string;
+  enrichment_error: string | null;
+}
+
+// ---- Alerts ----------------------------------------------------------------
+
+export interface AlertRule {
+  id: number;
+  name: string;
+  min_btc: number;
+  include_unconfirmed: boolean;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+  events_count: number;
+}
+
+export interface AlertRuleInput {
+  name: string;
+  min_btc: number;
+  include_unconfirmed: boolean;
+  enabled: boolean;
+}
+
+export interface AlertEvent {
+  id: number;
+  rule_id: number | null;
+  rule_name: string;
+  rule_min_btc: number;
+  txid: string;
+  value_sat: number;
+  confirmed: boolean;
+  triggered_at: string;
+}
+
+export interface AlertEventList {
+  data: AlertEvent[];
+  total: number;
+  generated_at: string;
+  source: string;
+}
